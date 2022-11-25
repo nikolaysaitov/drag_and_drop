@@ -1,3 +1,4 @@
+import "./App.css";
 import React, { useState } from "react";
 import {
   DesktopOutlined,
@@ -5,8 +6,9 @@ import {
   PieChartOutlined,
   TeamOutlined,
   UserOutlined,
+  EditOutlined, EllipsisOutlined, SettingOutlined,
 } from "@ant-design/icons";
-import { Breadcrumb, Layout, Menu, Row, Col, Card, Alert } from "antd";
+import { Breadcrumb, Layout, Menu, Row, Col, Card, Alert, Button } from "antd";
 const { Header, Content, Footer, Sider } = Layout;
 function getItem(label, key, icon, children) {
   return {
@@ -16,6 +18,7 @@ function getItem(label, key, icon, children) {
     label,
   };
 }
+
 const items = [
   getItem("Документация", "1", <PieChartOutlined />),
   getItem("Настройки", "2", <DesktopOutlined />),
@@ -61,6 +64,66 @@ const App = () => {
       ],
     },
   ]);
+
+  const [currentBoard, setCurrenBoard] = useState(null)
+  const [currentItem, setCurrenItem] = useState(null)
+
+  function dragOverHandler(e) {
+    e.preventDefault(e);
+    if (e.target.className == "item") {
+      e.target.style.boxShadow = "0 4px 3px grey"
+    }
+  }
+
+  function dragLeaveHandler(e) {
+    e.target.style.boxShadow = "none"
+  }
+
+  function dragStartHandler(e, board, item) {
+    setCurrenBoard(board);
+    setCurrenItem(item);
+  }
+
+  function dragEndHandler(e) {
+    e.target.style.boxShadow = "none"
+  }
+
+  function dropHandler(e, board, item) {
+    e.preventDefault(e);
+    const currentIndex = currentBoard.items.indexOf(currentItem);
+    currentBoard.items.splice(currentIndex, 1);
+    const dropIndex = board.items.indexOf(item);
+    board.items.splice(dropIndex + 1, 0, currentItem);
+    setBoards(boards.map(b => {
+      if(b.id === board.id) {
+          return board;
+      }
+      if(b.id === currentBoard.id) {
+        return currentBoard;
+      }
+    
+      return b
+    }))
+  }
+
+
+  function dropCardHandler(e, board) {
+    if(e.target.className !== "item") { 
+    board.items.push(currentItem);
+    const currentIndex = currentBoard.items.indexOf(currentItem);
+    currentBoard.items.splice(currentIndex, 1);
+    setBoards(boards.map(b => {
+      if(b.id === board.id) {
+          return board;
+      }
+      if(b.id === currentBoard.id) {
+        return currentBoard;
+      }
+      
+      return b
+    }))
+  }
+  }
 
   return (
     <Layout
@@ -114,17 +177,39 @@ const App = () => {
             <Row gutter={56}>
               {boards.map((board) => (
                 <Col span={700}>
-                  <Card title={board.title}>
+                  <Card title={board.title} 
+                  onDragOver={(e) => dragOverHandler(e)}
+                  onDrop={(e) => dropCardHandler(e, board)}
+                  actions={[
+                        <SettingOutlined key="setting" />,
+                        <EditOutlined key="edit" />,
+                        <EllipsisOutlined key="ellipsis" />,
+                      ]} style={{
+                        display: 'flex',
+                        
+                        width: "350px",
+                        minHeight: "600px",
+                        flexDirection: 'column',
+    justifyContent: 'space-between',
+                        
+                      }}>
                     {board.items.map((item) => (
-                      <Alert
+                      <div block 
+
+                      onDragOver={(e) => dragOverHandler(e)}
+                      onDragLeave={e => dragLeaveHandler(e)}
+                      onDragStart={(e) => dragStartHandler(e, board, item)}
+                      onDragEnd={(e) => dragEndHandler(e)}
+                      onDrop={(e) => dropHandler(e, board, item)}
+                      draggable={true}
                         style={{
                           margin: "5px",
                           cursor: "grab",
                         }}
-                        message={item.title}
+                        message={item.title}   className='item'
                       >
                         {item.title}
-                      </Alert>
+                      </div>
                     ))}
                   </Card>
                 </Col>
